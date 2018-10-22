@@ -66,7 +66,7 @@ public class TransactionRecoveryImpl implements TransactionRecovery, Transaction
 	}
 
 	public void recoverTransaction(Transaction transaction)
-			throws CommitRequiredException, RollbackRequiredException, SystemException {
+			throws SystemException {
 
 		TransactionContext transactionContext = transaction.getTransactionContext();
 		boolean coordinator = transactionContext.isCoordinator();

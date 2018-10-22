@@ -1,21 +1,19 @@
 /**
  * Copyright 2014-2016 yangming.liu<bytefox@126.com>.
- * <p>
  * This copyrighted material is made available to anyone wishing to use, modify,
  * copy, or redistribute it subject to the terms and conditions of the GNU
  * Lesser General Public License, as published by the Free Software Foundation.
- * <p>
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
  * or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
  * for more details.
- * <p>
  * You should have received a copy of the GNU Lesser General Public License
  * along with this distribution; if not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.feisoft.transaction.archive;
 
-import org.feisoft.jta.resource.XATerminatorImpl;
+import org.feisoft.common.utils.DbPool.DbPoolUtil;
 import org.feisoft.jta.supports.resource.RemoteResourceDescriptor;
 import org.feisoft.transaction.supports.resource.XAResourceDescriptor;
 import org.slf4j.Logger;
@@ -24,28 +22,36 @@ import org.slf4j.LoggerFactory;
 import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.sql.Statement;
 
 public class XAResourceArchive implements XAResource {
+
     static final Logger logger = LoggerFactory.getLogger(XAResourceArchive.class);
+
     public static final int DEFAULT_VOTE = -1;
 
     private boolean suspended;
+
     private boolean delisted;
+
     private boolean completed;
+
     private boolean readonly;
+
     private boolean committed;
+
     private boolean rolledback;
+
     private boolean heuristic;
+
     private boolean identified;
 
     private transient boolean recovered;
 
     private Xid xid;
+
     private int vote = DEFAULT_VOTE;
+
     private XAResourceDescriptor descriptor;
 
     public void commit(Xid ignore, boolean onePhase) throws XAException {
@@ -69,8 +75,7 @@ public class XAResourceArchive implements XAResource {
                 }
             }
 
-
-//			descriptor.commit(xid, onePhase);
+            //			descriptor.commit(xid, onePhase);
         }
     }
 
@@ -238,31 +243,14 @@ public class XAResourceArchive implements XAResource {
         this.identified = identified;
     }
 
-
     public void releaseLock() throws XAException, SQLException {
-        Connection conn = null;
-        Statement stmt = null;
-        try {
-            String gloableXid = partGloableXid(getXid());
-            String branchXid = partBranchXid(getXid());
-            String sql = "delete from txc_lock where xid ='" + gloableXid + "' and branch_id='" + branchXid + "' ";
-
-
-            Class.forName(XATerminatorImpl.sourceProp.get("className"));
-            conn = DriverManager.getConnection(XATerminatorImpl.sourceProp.get("url"), XATerminatorImpl.sourceProp.get("user"), XATerminatorImpl.sourceProp.get("password"));
-            stmt = conn.createStatement();
-            stmt.execute(sql);
-        } catch (SQLException ex) {
-            logger.error("SQL.error", ex);
+        String gloableXid = partGloableXid(getXid());
+        String branchXid = partBranchXid(getXid());
+        String sql = "delete from txc_lock where xid ='" + gloableXid + "' and branch_id='" + branchXid + "' ";
+        if (DbPoolUtil.executeUpdate(sql) == 0) {
             throw new XAException("invokeTwoPhaseCommit.SQLException");
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        } finally {
-            if (conn != null)
-                conn.close();
-            if (stmt != null)
-                stmt.close();
         }
+
     }
 
     public String partGloableXid(Xid xid) {
@@ -291,7 +279,6 @@ public class XAResourceArchive implements XAResource {
         return builder.toString();
     }
 
-
     private static void appendXid(StringBuilder builder, Xid xid) {
         byte[] gtrid = xid.getGlobalTransactionId();
         byte[] btrid = xid.getBranchQualifier();
@@ -309,7 +296,8 @@ public class XAResourceArchive implements XAResource {
         appendAsHex(builder, xid.getFormatId());
     }
 
-    private static final char[] HEX_DIGITS = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+    private static final char[] HEX_DIGITS = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd',
+            'e', 'f' };
 
     public static void appendAsHex(StringBuilder builder, byte[] bytes) {
         builder.append("0x");
@@ -317,7 +305,6 @@ public class XAResourceArchive implements XAResource {
             builder.append(HEX_DIGITS[(b >>> 4) & 0xF]).append(HEX_DIGITS[b & 0xF]);
         }
     }
-
 
     public static void appendAsHex(StringBuilder builder, int value) {
         if (value == 0) {

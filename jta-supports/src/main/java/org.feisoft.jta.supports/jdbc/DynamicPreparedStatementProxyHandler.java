@@ -145,36 +145,25 @@ public class DynamicPreparedStatementProxyHandler implements InvocationHandler {
     }
 
     private Object LockSharedMode(Method method, Object[] args)
-            throws ClassNotFoundException, SQLException, XAException, JSQLParserException, IllegalAccessException,
-            InvocationTargetException {
-        Connection conn = null;
-        Statement st = null;
+            throws SQLException, XAException, JSQLParserException, IllegalAccessException, InvocationTargetException {
         Xid currentXid;
-        try {
-            Class.forName(XADataSourceImpl.className);
-            conn = DriverManager.getConnection(XADataSourceImpl.url, XADataSourceImpl.user, XADataSourceImpl.password);
-            st = conn.createStatement();
 
-            BackInfo backInfo = new BackInfo();
-            BaseResolvers resolver = ImageUtil
-                    .getImageResolvers(sql.substring(0, sql.toLowerCase().indexOf("lock")), backInfo);
-            backInfo.setBeforeImage(resolver.genBeforeImage());
-            currentXid = TransactionImpl.currentXid.get();
-            String GloableXid = partGloableXid(currentXid);
-            String branchXid = partBranchXid(currentXid);
-            getSlock(conn, st, resolver, GloableXid, branchXid);
+        BackInfo backInfo = new BackInfo();
+        BaseResolvers resolver = ImageUtil
+                .getImageResolvers(sql.substring(0, sql.toLowerCase().indexOf("lock")), backInfo);
+        backInfo.setBeforeImage(resolver.genBeforeImage());
+        currentXid = TransactionImpl.currentXid.get();
+        String GloableXid = partGloableXid(currentXid);
+        String branchXid = partBranchXid(currentXid);
+        try {
+            getSlock(resolver, GloableXid, branchXid);
         } finally {
-            if (conn != null) {
-                conn.close();
-            }
-            if (st != null) {
-                st.close();
-            }
+            //本地直接提交,如不放在finally，本地连接将永远锁定
+            xaConn.getXAResource().end(currentXid, XAResource.TMSUCCESS);
+            xaConn.getXAResource().prepare(currentXid);
         }
         Object obj = method.invoke(realObject, args);
-        //本地直接提交
-        xaConn.getXAResource().end(currentXid, XAResource.TMSUCCESS);
-        xaConn.getXAResource().prepare(currentXid);
+
         return obj;
     }
 
@@ -283,13 +272,13 @@ public class DynamicPreparedStatementProxyHandler implements InvocationHandler {
             if (this.lockCurrent(lockList)) {
                 return;
             }
-        } while(btime - atime <= (long)this.timeOut);
+        } while (btime - atime <= (long) this.timeOut);
 
         throw new XAException("Proxy.getLockTimeout");
 
     }
 
-    private void getSlock(Connection conn, Statement st, BaseResolvers resolver, String gloableXid, String branchXid)
+    private void getSlock(BaseResolvers resolver, String gloableXid, String branchXid)
             throws XAException, JSQLParserException, SQLException {
 
         long atime = System.currentTimeMillis();
@@ -312,7 +301,7 @@ public class DynamicPreparedStatementProxyHandler implements InvocationHandler {
                 try {
                     lock.lock();
                 } catch (Exception e) {
-                    logger.info("getXlock -- Data locked by other,retry",e);
+                    logger.info("getXlock -- Data locked by other,retry", e);
                     return false;
                 }
             }
