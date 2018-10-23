@@ -53,15 +53,8 @@ public class SimpleTransactionStrategy implements TransactionStrategy {
 		}
 	}
 
-	public int prepare(Xid xid) throws RollbackRequiredException, CommitRequiredException {
-
-		try {
-			return this.terminator.prepare(xid);
-		} catch (XAException xaex) {
-			throw new RollbackRequiredException();
-		} catch (RuntimeException xaex) {
-			throw new RollbackRequiredException();
-		}
+	public int prepare(Xid xid) throws XAException {
+		throw  new XAException("IllegalOperation= prapare");
 
 	}
 

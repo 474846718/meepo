@@ -25,7 +25,6 @@ import javax.transaction.HeuristicMixedException;
 import javax.transaction.HeuristicRollbackException;
 import javax.transaction.SystemException;
 import javax.transaction.xa.XAException;
-import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
 public class CommonTransactionStrategy implements TransactionStrategy {
@@ -47,27 +46,8 @@ public class CommonTransactionStrategy implements TransactionStrategy {
 		return 0;
 	}
 
-	public int prepare(Xid xid) throws RollbackRequiredException, CommitRequiredException {
-		int nativeVote = XAResource.XA_RDONLY;
-		try {
-			nativeVote = this.nativeTerminator.prepare(xid);
-		} catch (Exception ex) {
-			throw new RollbackRequiredException();
-		}
-
-		int remoteVote = XAResource.XA_RDONLY;
-		try {
-			remoteVote = this.remoteTerminator.prepare(xid);
-		} catch (Exception ex) {
-			ex.printStackTrace();
-			throw new RollbackRequiredException();
-		}
-
-		if (XAResource.XA_OK == nativeVote || XAResource.XA_OK == remoteVote) {
-			return XAResource.XA_OK;
-		} else {
-			return XAResource.XA_RDONLY;
-		}
+	public int prepare(Xid xid) throws XAException {
+		throw  new XAException("IllegalOperation= prapare");
 
 	}
 

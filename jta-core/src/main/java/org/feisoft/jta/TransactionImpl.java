@@ -1,21 +1,21 @@
 /**
  * Copyright 2014-2016 yangming.liu<bytefox@126.com>.
- * <p>
  * This copyrighted material is made available to anyone wishing to use, modify,
  * copy, or redistribute it subject to the terms and conditions of the GNU
  * Lesser General Public License, as published by the Free Software Foundation.
- * <p>
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
  * or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
  * for more details.
- * <p>
  * You should have received a copy of the GNU Lesser General Public License
  * along with this distribution; if not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.feisoft.jta;
 
 import org.apache.commons.lang3.StringUtils;
+import org.feisoft.common.utils.ByteUtils;
+import org.feisoft.common.utils.CommonUtils;
 import org.feisoft.jta.resource.XATerminatorImpl;
 import org.feisoft.jta.resource.XATerminatorOptd;
 import org.feisoft.jta.strategy.CommonTransactionStrategy;
@@ -28,8 +28,6 @@ import org.feisoft.jta.supports.resource.LocalXAResourceDescriptor;
 import org.feisoft.jta.supports.resource.RemoteResourceDescriptor;
 import org.feisoft.jta.supports.resource.UnidentifiedResourceDescriptor;
 import org.feisoft.jta.supports.wire.RemoteCoordinator;
-import org.feisoft.common.utils.ByteUtils;
-import org.feisoft.common.utils.CommonUtils;
 import org.feisoft.transaction.*;
 import org.feisoft.transaction.Transaction;
 import org.feisoft.transaction.archive.TransactionArchive;
@@ -54,29 +52,41 @@ import javax.transaction.xa.Xid;
 import java.util.*;
 
 public class TransactionImpl implements Transaction {
+
     static final Logger logger = LoggerFactory.getLogger(TransactionImpl.class);
 
     private transient boolean timing = true;
+
     private TransactionBeanFactory beanFactory;
 
     private TransactionStrategy transactionStrategy;
 
     private int transactionStatus;
+
     private int transactionTimeout;
+
     private int transactionVote;
+
     private Object transactionalExtra;
+
     private final TransactionContext transactionContext;
 
     private final TransactionResourceListenerList resourceListenerList = new TransactionResourceListenerList();
 
     private final Map<String, XAResourceArchive> applicationMap = new HashMap<String, XAResourceArchive>();
+
     private final Map<String, XAResourceArchive> participantMap = new HashMap<String, XAResourceArchive>();
+
     private XAResourceArchive participant; // last resource
+
     private final List<XAResourceArchive> participantList = new ArrayList<XAResourceArchive>();
+
     private final List<XAResourceArchive> nativeParticipantList = new ArrayList<XAResourceArchive>();
+
     private final List<XAResourceArchive> remoteParticipantList = new ArrayList<XAResourceArchive>();
 
     private final SynchronizationList synchronizationList = new SynchronizationList();
+
     private final TransactionListenerList transactionListenerList = new TransactionListenerList();
 
     public static ThreadLocal<Xid> currentXid = new ThreadLocal<Xid>();
@@ -170,7 +180,7 @@ public class TransactionImpl implements Transaction {
 
             return vote;
         } catch (Exception e) {
-           e.printStackTrace();
+            e.printStackTrace();
         } finally {
             transactionLogger.updateTransaction(archive);
         }
@@ -203,8 +213,9 @@ public class TransactionImpl implements Transaction {
     }
 
     /* opc: true, compensable-transaction & remote-coordinator; false, remote-coordinator */
-    public synchronized void participantCommit(boolean opc) throws RollbackException, HeuristicMixedException,
-            HeuristicRollbackException, SecurityException, IllegalStateException, CommitRequiredException, SystemException {
+    public synchronized void participantCommit(boolean opc)
+            throws RollbackException, HeuristicMixedException, HeuristicRollbackException, SecurityException,
+            IllegalStateException, CommitRequiredException, SystemException {
         if (this.transactionContext.isRecoveried()) {
             this.recover(); // Execute recoveryInit if transaction is recovered from tx-log.
             this.invokeParticipantCommit();
@@ -215,11 +226,13 @@ public class TransactionImpl implements Transaction {
         }
     }
 
-    private void checkForTransactionExtraIfNecessary() throws RollbackException, HeuristicMixedException,
-            HeuristicRollbackException, SecurityException, IllegalStateException, CommitRequiredException, SystemException {
+    private void checkForTransactionExtraIfNecessary()
+            throws RollbackException, HeuristicMixedException, HeuristicRollbackException, SecurityException,
+            IllegalStateException, CommitRequiredException, SystemException {
 
         if (this.transactionalExtra != null) /* for ByteTCC */ {
-            if (this.participantList.isEmpty() == false && this.participant == null) /* see initGetTransactionStrategy */ {
+            if (this.participantList.isEmpty() == false
+                    && this.participant == null) /* see initGetTransactionStrategy */ {
                 this.participantRollback();
                 throw new HeuristicRollbackException();
             } else if (this.participantList.size() > 1) {
@@ -230,8 +243,9 @@ public class TransactionImpl implements Transaction {
 
     }
 
-    private void participantOnePhaseCommit() throws RollbackException, HeuristicMixedException, HeuristicRollbackException,
-            SecurityException, IllegalStateException, CommitRequiredException, SystemException {
+    private void participantOnePhaseCommit()
+            throws RollbackException, HeuristicMixedException, HeuristicRollbackException, SecurityException,
+            IllegalStateException, CommitRequiredException, SystemException {
 
         this.checkForTransactionExtraIfNecessary();
 
@@ -282,8 +296,9 @@ public class TransactionImpl implements Transaction {
 
     }
 
-    private void participantTwoPhaseCommit() throws RollbackException, HeuristicMixedException, HeuristicRollbackException,
-            SecurityException, IllegalStateException, CommitRequiredException, SystemException {
+    private void participantTwoPhaseCommit()
+            throws RollbackException, HeuristicMixedException, HeuristicRollbackException, SecurityException,
+            IllegalStateException, CommitRequiredException, SystemException {
 
         if (this.transactionStatus == Status.STATUS_ACTIVE) {
             throw new IllegalStateException();
@@ -413,8 +428,9 @@ public class TransactionImpl implements Transaction {
         }
     }
 
-    public synchronized void commit() throws RollbackException, HeuristicMixedException, HeuristicRollbackException,
-            SecurityException, IllegalStateException, CommitRequiredException, SystemException {
+    public synchronized void commit()
+            throws RollbackException, HeuristicMixedException, HeuristicRollbackException, SecurityException,
+            IllegalStateException, CommitRequiredException, SystemException {
 
         if (this.transactionStatus == Status.STATUS_ACTIVE) {
             this.fireCommit();
@@ -431,7 +447,8 @@ public class TransactionImpl implements Transaction {
 
     }
 
-    private void fireCommit() throws RollbackException, HeuristicMixedException, HeuristicRollbackException, SecurityException,
+    private void fireCommit()
+            throws RollbackException, HeuristicMixedException, HeuristicRollbackException, SecurityException,
             IllegalStateException, CommitRequiredException, SystemException {
 
         // stop-timing
@@ -550,7 +567,7 @@ public class TransactionImpl implements Transaction {
         // boolean committed = false;
         int vote = XAResource.XA_RDONLY;
         try {
-//            vote = currentStrategy.prepare(xid);
+            //            vote = currentStrategy.prepare(xid);
             vote = XAResource.XA_OK;
         } catch (Exception rex) {
             this.transactionListenerList.onPrepareFailure(xid);
@@ -600,7 +617,8 @@ public class TransactionImpl implements Transaction {
 
     }
 
-    public synchronized boolean delistResource(XAResource xaRes, int flag) throws IllegalStateException, SystemException {
+    public synchronized boolean delistResource(XAResource xaRes, int flag)
+            throws IllegalStateException, SystemException {
         if (this.transactionStatus != Status.STATUS_ACTIVE && this.transactionStatus != Status.STATUS_MARKED_ROLLBACK) {
             throw new IllegalStateException();
         }
@@ -622,7 +640,8 @@ public class TransactionImpl implements Transaction {
 
     }
 
-    public boolean delistResource(XAResourceDescriptor descriptor, int flag) throws IllegalStateException, SystemException {
+    public boolean delistResource(XAResourceDescriptor descriptor, int flag)
+            throws IllegalStateException, SystemException {
         String identifier = descriptor.getIdentifier();
 
         RemoteCoordinator transactionCoordinator = this.beanFactory.getTransactionCoordinator();
@@ -650,18 +669,19 @@ public class TransactionImpl implements Transaction {
         return true;
     }
 
-    private boolean delistResource(XAResourceArchive archive, int flag) throws SystemException, RollbackRequiredException {
+    private boolean delistResource(XAResourceArchive archive, int flag)
+            throws SystemException, RollbackRequiredException {
         try {
             Xid branchXid = archive.getXid();
 
             switch (flag) {
                 case XAResource.TMSUCCESS:
                 case XAResource.TMFAIL:
-//                    archive.end(branchXid, flag);
+                    //                    archive.end(branchXid, flag);
                     archive.setDelisted(true);
                     break;
                 case XAResource.TMSUSPEND:
-//                    archive.end(branchXid, flag);
+                    //                    archive.end(branchXid, flag);
                     archive.setDelisted(true);
                     archive.setSuspended(true);
                     break;
@@ -740,7 +760,8 @@ public class TransactionImpl implements Transaction {
             XAResourceDescriptor lro = this.participant.getDescriptor();
             try {
                 if (lro.isSameRM(descriptor) == false) {
-                    throw new SystemException("Only one non-XA resource is allowed to participate in global transaction.");
+                    throw new SystemException(
+                            "Only one non-XA resource is allowed to participate in global transaction.");
                 }
             } catch (XAException ex) {
                 SystemException sysEx = new SystemException();
@@ -804,7 +825,7 @@ public class TransactionImpl implements Transaction {
                     ByteUtils.byteArrayToString(branchXid.getGlobalTransactionId()), archive,
                     ByteUtils.byteArrayToString(branchXid.getBranchQualifier()), flag);
 
-//            openGeneralLog(archive);
+            //            openGeneralLog(archive);
             switch (flag) {
                 case XAResource.TMNOFLAGS:
                     long expired = this.transactionContext.getExpiredTime();
@@ -867,7 +888,6 @@ public class TransactionImpl implements Transaction {
 
     }
 
-
     public int getStatus() /* throws SystemException */ {
         return this.transactionStatus;
     }
@@ -922,7 +942,8 @@ public class TransactionImpl implements Transaction {
         this.invokeParticipantRollback();
     }
 
-    public synchronized void participantRollback() throws IllegalStateException, RollbackRequiredException, SystemException {
+    public synchronized void participantRollback()
+            throws IllegalStateException, RollbackRequiredException, SystemException {
 
         if (this.transactionStatus == Status.STATUS_UNKNOWN) {
             throw new IllegalStateException();
@@ -1213,7 +1234,12 @@ public class TransactionImpl implements Transaction {
                 continue;
             }
 
-            boolean xidExists = this.recover(archive);
+            boolean xidExists = false;
+            try {
+                xidExists = this.recover(archive);
+            } catch (SystemException e) {
+                this.forgetQuietly();
+            }
             unRollbackExists = xidExists ? true : unRollbackExists;
         }
 
@@ -1598,7 +1624,6 @@ public class TransactionImpl implements Transaction {
     }
 
     public synchronized int participantStart() throws SystemException {
-
 
         TransactionXid xid = this.transactionContext.getXid();
 

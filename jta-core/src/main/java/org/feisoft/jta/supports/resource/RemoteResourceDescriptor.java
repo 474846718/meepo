@@ -57,7 +57,7 @@ public class RemoteResourceDescriptor implements XAResourceDescriptor {
 	}
 
 	public int prepare(Xid arg0) throws XAException {
-		return delegate.prepare(arg0);
+		throw  new XAException("IllegalOperation= prapare");
 	}
 
 	public Xid[] recover(int arg0) throws XAException {

@@ -43,35 +43,9 @@ public class XATerminatorImpl implements XATerminator {
 
     private final List<XAResourceArchive> resources = new ArrayList<XAResourceArchive>();
 
-    public synchronized int prepare(Xid xid) throws XAException {
-        TransactionLogger transactionLogger = this.beanFactory.getTransactionLogger();
-
-        int globalVote = XAResource.XA_RDONLY;
-        for (int i = 0; i < this.resources.size(); i++) {
-            XAResourceArchive archive = this.resources.get(i);
-
-            boolean prepared = archive.getVote() != XAResourceArchive.DEFAULT_VOTE;
-            if (prepared) {
-                globalVote = archive.getVote() == XAResource.XA_RDONLY ? globalVote : XAResource.XA_OK;
-            } else {
-                int branchVote = archive.prepare(archive.getXid());
-                archive.setVote(branchVote);
-                if (branchVote == XAResource.XA_RDONLY) {
-                    archive.setReadonly(true);
-                    archive.setCompleted(true);
-                } else {
-                    globalVote = XAResource.XA_OK;
-                }
-                transactionLogger.updateResource(archive);
-
-            }
-
-            logger.info("[{}] prepare: xares= {}, branch= {}, vote= {}",
-                    ByteUtils.byteArrayToString(archive.getXid().getGlobalTransactionId()), archive,
-                    ByteUtils.byteArrayToString(archive.getXid().getBranchQualifier()), archive.getVote());
-        }
-
-        return globalVote;
+    public synchronized int prepare(Xid xid) {
+        logger.error("unnecessary operation = prepare!");
+        return 0;
     }
 
     /**

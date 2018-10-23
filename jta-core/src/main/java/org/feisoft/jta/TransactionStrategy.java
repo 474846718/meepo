@@ -22,6 +22,7 @@ import javax.transaction.HeuristicCommitException;
 import javax.transaction.HeuristicMixedException;
 import javax.transaction.HeuristicRollbackException;
 import javax.transaction.SystemException;
+import javax.transaction.xa.XAException;
 import javax.transaction.xa.Xid;
 
 public interface TransactionStrategy /* extends TransactionBeanFactoryAware */ {
@@ -33,7 +34,7 @@ public interface TransactionStrategy /* extends TransactionBeanFactoryAware */ {
 
 	public int start(Xid xid) throws RollbackRequiredException, CommitRequiredException;
 
-	public int prepare(Xid xid) throws RollbackRequiredException, CommitRequiredException;
+	public int prepare(Xid xid) throws RollbackRequiredException, CommitRequiredException, XAException;
 
 	public void commit(Xid xid)
 			throws HeuristicMixedException, HeuristicRollbackException, IllegalStateException, SystemException;

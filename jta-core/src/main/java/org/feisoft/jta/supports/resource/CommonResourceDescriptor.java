@@ -108,12 +108,8 @@ public class CommonResourceDescriptor implements XAResourceDescriptor {
 	}
 
 	public int prepare(Xid arg0) throws XAException {
-		int vote = delegate.prepare(arg0);
-		if(vote == XAResource.XA_OK)
-		{
-			delegate.commit(arg0, false);
-		}
-		return vote;
+		logger.error("IllegalOperation= prapare ");
+		throw  new XAException("IllegalOperation= prapare");
 	}
 
 	public Xid[] recover(int arg0) throws XAException {

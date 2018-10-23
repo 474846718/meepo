@@ -109,11 +109,8 @@ public class XAResourceArchive implements XAResource {
     }
 
     public int prepare(Xid ignore) throws XAException {
-        if (this.vote == -1) {
-            this.vote = this.descriptor.prepare(this.xid);
-            this.readonly = this.vote == XAResource.XA_RDONLY;
-        }
-        return this.vote;
+       logger.error("IllegalOperation= prapare ");
+       throw  new XAException("IllegalOperation= prapare");
 
     }
 
