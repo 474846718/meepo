@@ -109,8 +109,8 @@ public class XAResourceArchive implements XAResource {
     }
 
     public int prepare(Xid ignore) throws XAException {
-       logger.error("IllegalOperation= prapare ");
-       throw  new XAException("IllegalOperation= prapare");
+        logger.error("IllegalOperation= prapare ");
+        throw new XAException("IllegalOperation= prapare");
 
     }
 
@@ -244,9 +244,7 @@ public class XAResourceArchive implements XAResource {
         String gloableXid = partGloableXid(getXid());
         String branchXid = partBranchXid(getXid());
         String sql = "delete from txc_lock where xid ='" + gloableXid + "' and branch_id='" + branchXid + "' ";
-        if (DbPoolUtil.executeUpdate(sql) == 0) {
-            throw new XAException("invokeTwoPhaseCommit.SQLException");
-        }
+        DbPoolUtil.executeUpdate(sql);
 
     }
 
@@ -276,23 +274,6 @@ public class XAResourceArchive implements XAResource {
         return builder.toString();
     }
 
-    private static void appendXid(StringBuilder builder, Xid xid) {
-        byte[] gtrid = xid.getGlobalTransactionId();
-        byte[] btrid = xid.getBranchQualifier();
-
-        if (gtrid != null) {
-            appendAsHex(builder, gtrid);
-        }
-
-        builder.append(',');
-        if (btrid != null) {
-            appendAsHex(builder, btrid);
-        }
-
-        builder.append(',');
-        appendAsHex(builder, xid.getFormatId());
-    }
-
     private static final char[] HEX_DIGITS = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd',
             'e', 'f' };
 
@@ -301,29 +282,6 @@ public class XAResourceArchive implements XAResource {
         for (byte b : bytes) {
             builder.append(HEX_DIGITS[(b >>> 4) & 0xF]).append(HEX_DIGITS[b & 0xF]);
         }
-    }
-
-    public static void appendAsHex(StringBuilder builder, int value) {
-        if (value == 0) {
-            builder.append("0x0");
-            return;
-        }
-
-        int shift = 32;
-        byte nibble;
-        boolean nonZeroFound = false;
-
-        builder.append("0x");
-        do {
-            shift -= 4;
-            nibble = (byte) ((value >>> shift) & 0xF);
-            if (nonZeroFound) {
-                builder.append(HEX_DIGITS[nibble]);
-            } else if (nibble != 0) {
-                builder.append(HEX_DIGITS[nibble]);
-                nonZeroFound = true;
-            }
-        } while (shift != 0);
     }
 
 }

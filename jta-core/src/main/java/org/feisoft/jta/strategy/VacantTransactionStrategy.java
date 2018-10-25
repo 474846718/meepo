@@ -23,7 +23,7 @@ import javax.transaction.HeuristicCommitException;
 import javax.transaction.HeuristicMixedException;
 import javax.transaction.HeuristicRollbackException;
 import javax.transaction.SystemException;
-import javax.transaction.xa.XAResource;
+import javax.transaction.xa.XAException;
 import javax.transaction.xa.Xid;
 
 public class VacantTransactionStrategy implements TransactionStrategy {
@@ -32,8 +32,8 @@ public class VacantTransactionStrategy implements TransactionStrategy {
 		return 0;
 	}
 
-	public int prepare(Xid xid) throws RollbackRequiredException, CommitRequiredException {
-		return XAResource.XA_RDONLY;
+	public int prepare(Xid xid) throws XAException {
+		throw  new XAException("IllegalOperation= prapare");
 	}
 
 	public void commit(Xid xid)

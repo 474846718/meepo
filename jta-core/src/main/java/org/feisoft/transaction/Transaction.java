@@ -2,7 +2,6 @@
 package org.feisoft.transaction;
 
 import org.feisoft.transaction.archive.TransactionArchive;
-import org.feisoft.transaction.supports.TransactionListener;
 import org.feisoft.transaction.supports.TransactionResourceListener;
 import org.feisoft.transaction.supports.resource.XAResourceDescriptor;
 
@@ -28,8 +27,6 @@ public interface Transaction extends javax.transaction.Transaction {
 	public boolean isTiming();
 
 	public void setTransactionTimeout(int seconds);
-
-	public void registerTransactionListener(TransactionListener listener);
 
 	public void registerTransactionResourceListener(TransactionResourceListener listener);
 
